@@ -1,0 +1,6 @@
+{
+  "name": "D&H Inox - Soluciones en Acero Inoxidable",
+  "description": "Catálogo profesional e interactivo de marmitas industriales y cámaras pass-through de D&H Inox SAS, con panel de administración.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

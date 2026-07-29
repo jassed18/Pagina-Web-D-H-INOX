@@ -34,23 +34,36 @@ export default function App() {
 
   // Initialize products from localStorage or default
   useEffect(() => {
-    const stored = localStorage.getItem('dh_products');
+    // Clear old storage key if present
+    localStorage.removeItem('dh_products');
+    
+    const stored = localStorage.getItem('dh_products_v2');
     if (stored) {
       try {
-        setProducts(JSON.parse(stored));
+        const parsed: Product[] = JSON.parse(stored).filter(
+          (p: Product) => p.id !== 'marmita-semi-automatica' && !p.name.toLowerCase().includes('semi-automática')
+        );
+        if (parsed.length === 0) {
+          setProducts(INITIAL_PRODUCTS);
+          localStorage.setItem('dh_products_v2', JSON.stringify(INITIAL_PRODUCTS));
+        } else {
+          setProducts(parsed);
+          localStorage.setItem('dh_products_v2', JSON.stringify(parsed));
+        }
       } catch (e) {
         setProducts(INITIAL_PRODUCTS);
+        localStorage.setItem('dh_products_v2', JSON.stringify(INITIAL_PRODUCTS));
       }
     } else {
       setProducts(INITIAL_PRODUCTS);
-      localStorage.setItem('dh_products', JSON.stringify(INITIAL_PRODUCTS));
+      localStorage.setItem('dh_products_v2', JSON.stringify(INITIAL_PRODUCTS));
     }
   }, []);
 
   // Sync state changes with localStorage
   const saveProducts = (updated: Product[]) => {
     setProducts(updated);
-    localStorage.setItem('dh_products', JSON.stringify(updated));
+    localStorage.setItem('dh_products_v2', JSON.stringify(updated));
   };
 
   const handleAddProduct = (newProd: Product) => {

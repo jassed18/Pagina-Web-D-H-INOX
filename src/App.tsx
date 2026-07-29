@@ -128,7 +128,7 @@ export default function App() {
           {/* Nav items links */}
           <div className="hidden md:flex items-center gap-8 text-xs font-mono font-bold uppercase tracking-wider text-slate-600">
             <a href="#catalogo" className="hover:text-slate-900 transition-colors">Catálogo de Equipos</a>
-            <a href="#simulador" className="hover:text-slate-900 transition-colors">Simulador HMI</a>
+            <a href="#simulador" className="hover:text-slate-900 transition-colors">Sistema Inteligente</a>
             <a href="#informacion" className="hover:text-slate-900 transition-colors">Video & Redes</a>
             <a href="#contacto" className="hover:text-slate-900 transition-colors">Atención y Contacto</a>
           </div>
@@ -202,7 +202,7 @@ export default function App() {
               <div className="text-[10px] text-slate-400 uppercase font-mono font-bold tracking-wider">Galones Capacidad</div>
             </div>
             <div className="border-l border-slate-200">
-              <div className="text-lg sm:text-2xl font-bold font-mono text-slate-950">HMI</div>
+              <div className="text-lg sm:text-2xl font-bold font-mono text-slate-950">Pantalla Táctil</div>
               <div className="text-[10px] text-slate-400 uppercase font-mono font-bold tracking-wider">Control Delta/Xinje</div>
             </div>
             <div className="border-l border-slate-200">
@@ -228,7 +228,7 @@ export default function App() {
               href="#simulador"
               className="px-6 py-3 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-mono font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center gap-2"
             >
-              Simulador HMI <Sliders size={14} className="text-slate-500" />
+              Sistema Inteligente <Sliders size={14} className="text-slate-500" />
             </a>
           </motion.div>
 

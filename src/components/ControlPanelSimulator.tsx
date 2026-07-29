@@ -19,21 +19,14 @@ const RECIPES: Recipe[] = [
 ];
 
 export default function ControlPanelSimulator() {
-  const [mode, setMode] = useState<'semi' | 'auto'>('semi');
+  const mode = 'auto';
   
   // General State
   const [isEstopActive, setIsEstopActive] = useState(false);
   const [tiltAction, setTiltAction] = useState<'dwn' | 'off' | 'up'>('off');
   const [tiltAngle, setTiltAngle] = useState(0); // 0 (upright) to 45 (tilted)
 
-  // Semi-Auto Specific
-  const [burnerActive, setBurnerActive] = useState(false);
-  const [semiMixerDir, setSemiMixerDir] = useState<'rev' | 'off' | 'fwr'>('off');
-  const [semiSpeed, setSemiSpeed] = useState<'low' | 'med' | 'high'>('low');
-  const [semiTargetTemp, setSemiTargetTemp] = useState(85);
-  const [semiCurrentTemp, setSemiCurrentTemp] = useState(24.5);
-
-  // Auto Specific (HMI Screen State)
+  // Automatic Intelligent Screen State
   const [hmiState, setHmiState] = useState<'stop' | 'running' | 'paused'>('stop');
   const [autoTargetTemp, setAutoTargetTemp] = useState(85);
   const [autoCurrentTemp, setAutoCurrentTemp] = useState(24.5);
@@ -43,6 +36,7 @@ export default function ControlPanelSimulator() {
   const [autoWaterFill, setAutoWaterFill] = useState(false);
   const [autoHeatFault, setAutoHeatFault] = useState(false);
   const [selectedRecipeIndex, setSelectedRecipeIndex] = useState<number>(1); // default Salsa Boloñesa
+  const [burnerActive, setBurnerActive] = useState(false);
 
   // Kettle internal simulation values
   const [kettleWaterLevel, setKettleWaterLevel] = useState(20); // 0 to 100
@@ -56,19 +50,9 @@ export default function ControlPanelSimulator() {
     let lastTime = performance.now();
     const updateMixer = (time: number) => {
       let speed = 0;
-      if (!isEstopActive) {
-        if (mode === 'semi') {
-          if (semiMixerDir !== 'off') {
-            const multi = semiMixerDir === 'fwr' ? 1 : -1;
-            const speedVal = semiSpeed === 'low' ? 2 : semiSpeed === 'med' ? 5 : 9;
-            speed = speedVal * multi;
-          }
-        } else {
-          if (hmiState === 'running') {
-            const multi = autoMixerDir === 'FWR' ? 1 : -1;
-            speed = (autoMixerSpeed / 10) * multi;
-          }
-        }
+      if (!isEstopActive && hmiState === 'running') {
+        const multi = autoMixerDir === 'FWR' ? 1 : -1;
+        speed = (autoMixerSpeed / 10) * multi;
       }
       if (speed !== 0) {
         setMixerRotation((prev) => (prev + speed) % 360);
@@ -80,20 +64,17 @@ export default function ControlPanelSimulator() {
     return () => {
       if (simulationRef.current) cancelAnimationFrame(simulationRef.current);
     };
-  }, [mode, semiMixerDir, semiSpeed, hmiState, autoMixerSpeed, autoMixerDir, isEstopActive]);
+  }, [hmiState, autoMixerSpeed, autoMixerDir, isEstopActive]);
 
   // Temperature and Water level simulation physics
   useEffect(() => {
     const interval = setInterval(() => {
       if (isEstopActive) {
         // Temperature cools down
-        setSemiCurrentTemp(prev => Math.max(22.5, prev - 0.2));
         setAutoCurrentTemp(prev => Math.max(22.5, prev - 0.2));
         setBurnerActive(false);
-        if (mode === 'auto') {
-          setHmiState('stop');
-          setAutoWaterFill(false);
-        }
+        setHmiState('stop');
+        setAutoWaterFill(false);
         return;
       }
 
@@ -107,20 +88,6 @@ export default function ControlPanelSimulator() {
         }
         return prev;
       });
-
-      // Semi-auto thermodynamics
-      if (burnerActive) {
-        setSemiCurrentTemp((prev) => {
-          if (prev < semiTargetTemp) {
-            return parseFloat((prev + 0.45).toFixed(1));
-          } else {
-            // fluctuation around set temp
-            return parseFloat((semiTargetTemp + (Math.sin(Date.now() / 1000) * 0.3)).toFixed(1));
-          }
-        });
-      } else {
-        setSemiCurrentTemp((prev) => Math.max(24.5, parseFloat((prev - 0.15).toFixed(1))));
-      }
 
       // Auto thermodynamics and timers
       if (hmiState === 'running') {
@@ -153,7 +120,7 @@ export default function ControlPanelSimulator() {
     }, 200);
 
     return () => clearInterval(interval);
-  }, [isEstopActive, burnerActive, semiTargetTemp, hmiState, autoTargetTemp, autoWaterFill, tiltAction, mode]);
+  }, [isEstopActive, burnerActive, hmiState, autoTargetTemp, autoWaterFill, tiltAction]);
 
   // Handle Recipe Selection
   const applyRecipe = (idx: number) => {
@@ -169,7 +136,6 @@ export default function ControlPanelSimulator() {
     if (!isEstopActive) {
       // Deactivate active states on E-STOP Press
       setBurnerActive(false);
-      setSemiMixerDir('off');
       setHmiState('stop');
       setAutoWaterFill(false);
       setTiltAction('off');
@@ -180,10 +146,8 @@ export default function ControlPanelSimulator() {
     setIsEstopActive(false);
     setTiltAngle(0);
     setTiltAction('off');
-    setSemiCurrentTemp(24.5);
     setAutoCurrentTemp(24.5);
     setBurnerActive(false);
-    setSemiMixerDir('off');
     setHmiState('stop');
     setAutoWaterFill(false);
     setKettleWaterLevel(20);
@@ -193,7 +157,7 @@ export default function ControlPanelSimulator() {
   return (
     <div className="bento-card p-6 lg:p-8 max-w-6xl mx-auto overflow-hidden bg-white">
       
-      {/* Header and Mode Selector */}
+      {/* Header */}
       <div className="flex flex-col md:flex-row items-center justify-between border-b border-slate-200 pb-6 mb-6 gap-4">
         <div>
           <div className="flex items-center gap-2">
@@ -201,41 +165,20 @@ export default function ControlPanelSimulator() {
               Simulador Interactivo
             </span>
             <span className="px-2.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-mono font-bold tracking-wider rounded-full border border-blue-100 uppercase">
-              Q-BOIL Series
+              Sistema Inteligente DYH
             </span>
           </div>
           <h3 className="text-xl md:text-2xl font-bold font-sans text-slate-900 tracking-tight mt-1">
-            Módulo de Control y Operación de Marmita
+            Módulo de Control y Operación de Marmita Automática
           </h3>
           <p className="text-slate-600 text-xs md:text-sm mt-0.5">
-            Interactúa con los mandos para ver el funcionamiento físico de la marmita y agitación.
+            Interactúa con la pantalla táctil y mandos automatizados para controlar la cocción y agitación.
           </p>
         </div>
 
-        {/* Mode Selector Tab */}
-        <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200 self-center shadow-inner">
-          <button
-            onClick={() => setMode('semi')}
-            className={`px-4 py-2 rounded-xl font-mono text-xs font-bold tracking-wider uppercase transition-all flex items-center gap-2 ${
-              mode === 'semi'
-                ? 'bg-slate-900 text-white shadow-sm'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Sliders size={14} />
-            Semi-Automática
-          </button>
-          <button
-            onClick={() => setMode('auto')}
-            className={`px-4 py-2 rounded-xl font-mono text-xs font-bold tracking-wider uppercase transition-all flex items-center gap-2 ${
-              mode === 'auto'
-                ? 'bg-slate-900 text-white shadow-sm'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Layers size={14} />
-            Automática (HMI)
-          </button>
+        <div className="flex bg-slate-900 px-4 py-2 rounded-xl text-white font-mono text-xs font-bold tracking-wider uppercase items-center gap-2 shadow-sm">
+          <Layers size={14} className="text-blue-400" />
+          Marmita Automática
         </div>
       </div>
 
@@ -251,7 +194,7 @@ export default function ControlPanelSimulator() {
           <div className="flex items-center justify-between border-b border-slate-500/50 pb-4 mb-4">
             <span className="font-mono text-xs font-black tracking-widest text-slate-800 uppercase flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
-              D&H INOX - TABLERO INDUSTRIAL
+              D&H INOX - SISTEMA INTELIGENTE
             </span>
             <button
               onClick={resetSimulation}
@@ -261,181 +204,22 @@ export default function ControlPanelSimulator() {
             </button>
           </div>
 
-          {/* SIMULATOR MODES */}
-          
-          {/* 1. SEMI AUTOMATIC PANEL */}
-          {mode === 'semi' && (
-            <div className="space-y-6">
+          {/* AUTOMATIC TOUCH SCREEN PANEL */}
+          <div className="space-y-4">
+            
+            {/* Blue glowing screen border */}
+            <div className="bg-slate-950 text-emerald-400 rounded-lg p-4 border-4 border-slate-700 shadow-inner font-mono relative overflow-hidden">
               
-              {/* Temperature Digital Controller (Matches PV/SV digital controller pág 7) */}
-              <div className="bg-neutral-950 text-red-500 p-4 rounded-lg border-2 border-slate-600 shadow-inner font-mono flex justify-around items-center gap-4">
-                <div className="text-center">
-                  <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">PV (Actual Temp)</div>
-                  <div className="text-3xl font-black text-red-500 tracking-widest drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]">
-                    {semiCurrentTemp.toFixed(1)}°C
-                  </div>
-                </div>
-                <div className="h-10 w-px bg-slate-800" />
-                <div className="text-center">
-                  <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">SV (Set Limit)</div>
-                  <div className="flex items-center justify-center gap-2 mt-1">
-                    <button
-                      onClick={() => setSemiTargetTemp(t => Math.max(25, t - 5))}
-                      className="px-1.5 py-0.5 bg-slate-800 text-slate-300 hover:bg-slate-700 rounded text-xs"
-                    >
-                      ▼
-                    </button>
-                    <span className="text-xl font-bold text-green-400 drop-shadow-[0_0_6px_rgba(74,222,128,0.4)]">
-                      {semiTargetTemp}°C
-                    </span>
-                    <button
-                      onClick={() => setSemiTargetTemp(t => Math.min(150, t + 5))}
-                      className="px-1.5 py-0.5 bg-slate-800 text-slate-300 hover:bg-slate-700 rounded text-xs"
-                    >
-                      ▲
-                    </button>
-                  </div>
-                </div>
+              {/* Brand watermark inside screen */}
+              <div className="absolute right-3 top-3 opacity-15 select-none pointer-events-none">
+                <span className="text-xl font-black text-white italic">D&H INOX</span>
               </div>
 
-              {/* Grid of Dials and Selectors */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                
-                {/* Burner Selector (Gas Natural) */}
-                <div className="bg-slate-300/80 p-3 rounded-lg border border-slate-400 flex flex-col items-center">
-                  <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-2">QUEMADOR (Burner)</span>
-                  <div className="flex gap-1.5">
-                    <button
-                      onClick={() => setBurnerActive(false)}
-                      className={`px-3 py-1.5 rounded font-mono text-xs font-bold transition-all ${
-                        !burnerActive ? 'bg-slate-800 text-white shadow' : 'bg-slate-200 text-slate-600'
-                      }`}
-                    >
-                      OFF
-                    </button>
-                    <button
-                      disabled={isEstopActive}
-                      onClick={() => setBurnerActive(true)}
-                      className={`px-3 py-1.5 rounded font-mono text-xs font-bold transition-all ${
-                        burnerActive ? 'bg-orange-600 text-white shadow animate-pulse' : 'bg-slate-200 text-slate-600 hover:bg-slate-100'
-                      }`}
-                    >
-                      ON
-                    </button>
-                  </div>
-                </div>
-
-                {/* Agitator Selector (Rev / Off / Fwr) */}
-                <div className="bg-slate-300/80 p-3 rounded-lg border border-slate-400 flex flex-col items-center">
-                  <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-2">AGITADOR DIR</span>
-                  <div className="flex gap-1 bg-slate-400/50 p-0.5 rounded">
-                    {(['rev', 'off', 'fwr'] as const).map((dir) => (
-                      <button
-                        key={dir}
-                        disabled={isEstopActive}
-                        onClick={() => setSemiMixerDir(dir)}
-                        className={`px-2 py-1 rounded font-mono text-[10px] font-bold uppercase transition-all ${
-                          semiMixerDir === dir
-                            ? 'bg-blue-600 text-white shadow'
-                            : 'bg-slate-200 text-slate-700 hover:bg-slate-100'
-                        }`}
-                      >
-                        {dir}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Agitator Speed (Low / Med / High) */}
-                <div className="bg-slate-300/80 p-3 rounded-lg border border-slate-400 flex flex-col items-center">
-                  <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-2">VELOCIDAD MEZCLA</span>
-                  <div className="flex gap-1 bg-slate-400/50 p-0.5 rounded">
-                    {(['low', 'med', 'high'] as const).map((spd) => (
-                      <button
-                        key={spd}
-                        disabled={isEstopActive}
-                        onClick={() => setSemiSpeed(spd)}
-                        className={`px-2 py-1 rounded font-mono text-[10px] font-bold uppercase transition-all ${
-                          semiSpeed === spd
-                            ? 'bg-indigo-600 text-white shadow'
-                            : 'bg-slate-200 text-slate-700 hover:bg-slate-100'
-                        }`}
-                      >
-                        {spd.substring(0, 3)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Tilting System (Volteo de Olla) */}
-                <div className="bg-slate-300/80 p-3 rounded-lg border border-slate-400 flex flex-col items-center col-span-2 sm:col-span-1">
-                  <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-2">VOLTEO (TILT)</span>
-                  <div className="flex gap-1 bg-slate-400/50 p-0.5 rounded w-full justify-around">
-                    <button
-                      disabled={isEstopActive}
-                      onMouseDown={() => setTiltAction('dwn')}
-                      onMouseUp={() => setTiltAction('off')}
-                      onTouchStart={() => setTiltAction('dwn')}
-                      onTouchEnd={() => setTiltAction('off')}
-                      className={`flex-1 py-1 rounded font-mono text-[10px] font-bold transition-all ${
-                        tiltAction === 'dwn' ? 'bg-red-500 text-white' : 'bg-slate-200 text-slate-700'
-                      }`}
-                      title="Bajar olla para descargar"
-                    >
-                      DWN ▼
-                    </button>
-                    <button
-                      disabled={isEstopActive}
-                      onMouseDown={() => setTiltAction('up')}
-                      onMouseUp={() => setTiltAction('off')}
-                      onTouchStart={() => setTiltAction('up')}
-                      onTouchEnd={() => setTiltAction('off')}
-                      className={`flex-1 py-1 rounded font-mono text-[10px] font-bold transition-all ${
-                        tiltAction === 'up' ? 'bg-green-600 text-white' : 'bg-slate-200 text-slate-700'
-                      }`}
-                      title="Subir olla a posición inicial"
-                    >
-                      UP ▲
-                    </button>
-                  </div>
-                </div>
-
-                {/* Double Action Switch */}
-                <div className="bg-slate-300/80 p-3 rounded-lg border border-slate-400 flex flex-col items-center col-span-2">
-                  <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">DOBLE ACCIÓN (ANCLA + CENTRAL)</span>
-                  <p className="text-[9px] text-slate-600 text-center leading-tight mb-2">
-                    Activa agitador central independiente para mayor trituración y mezcla.
-                  </p>
-                  <div className="flex gap-4">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" disabled={isEstopActive} className="rounded text-blue-600" />
-                      <span className="text-xs font-mono font-bold text-slate-800">Motor Secundario ACTIVO</span>
-                    </label>
-                  </div>
-                </div>
-
+              {/* Screen Top Bar */}
+              <div className="flex justify-between items-center text-[10px] border-b border-emerald-500/30 pb-2 mb-3 text-slate-400">
+                <span>RECETA: <strong className="text-emerald-400">{RECIPES[selectedRecipeIndex].name}</strong></span>
+                <span>ESTADO: <strong className={hmiState === 'running' ? 'text-green-400 animate-pulse' : 'text-yellow-400'}>{hmiState.toUpperCase()}</strong></span>
               </div>
-
-            </div>
-          )}
-
-          {/* 2. AUTOMATIC HMI SCREEN PANEL (Delta Screen pág 10) */}
-          {mode === 'auto' && (
-            <div className="space-y-4">
-              
-              {/* Blue glowing screen border */}
-              <div className="bg-slate-950 text-emerald-400 rounded-lg p-4 border-4 border-slate-700 shadow-inner font-mono relative overflow-hidden">
-                
-                {/* Brand watermark inside screen */}
-                <div className="absolute right-3 top-3 opacity-15 select-none pointer-events-none">
-                  <span className="text-xl font-black text-white italic">D&H INOX</span>
-                </div>
-
-                {/* HMI Screen Top Bar */}
-                <div className="flex justify-between items-center text-[10px] border-b border-emerald-500/30 pb-2 mb-3 text-slate-400">
-                  <span>RECETA: <strong className="text-emerald-400">{RECIPES[selectedRecipeIndex].name}</strong></span>
-                  <span>ESTADO: <strong className={hmiState === 'running' ? 'text-green-400 animate-pulse' : 'text-yellow-400'}>{hmiState.toUpperCase()}</strong></span>
-                </div>
 
                 {/* Screen Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -581,7 +365,6 @@ export default function ControlPanelSimulator() {
               </div>
 
             </div>
-          )}
 
           {/* EMERGENCY STOP BUTTON (CRITICAL SAFETY FEATURE FROM PDF) */}
           <div className="mt-6 pt-4 border-t border-slate-500/30 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -674,7 +457,7 @@ export default function ControlPanelSimulator() {
                   }}
                 >
                   {/* Mixer Active Liquid Waves */}
-                  {((semiMixerDir !== 'off' && !isEstopActive) || (hmiState === 'running' && !isEstopActive)) && (
+                  {(hmiState === 'running' && !isEstopActive) && (
                     <motion.div
                       animate={{ x: [-10, 10, -10] }}
                       transition={{ repeat: Infinity, duration: 0.8 }}
@@ -748,8 +531,8 @@ export default function ControlPanelSimulator() {
             </div>
             <div className="flex justify-between">
               <span>ESTADO AGITACIÓN:</span>
-              <span className={((semiMixerDir !== 'off' && !isEstopActive) || (hmiState === 'running' && !isEstopActive)) ? 'text-blue-400 animate-pulse' : 'text-slate-500'}>
-                {((semiMixerDir !== 'off' && !isEstopActive) || (hmiState === 'running' && !isEstopActive)) ? 'ACTIVO (ROTANDO)' : 'DETENIDO'}
+              <span className={(hmiState === 'running' && !isEstopActive) ? 'text-blue-400 animate-pulse' : 'text-slate-500'}>
+                {(hmiState === 'running' && !isEstopActive) ? 'ACTIVO (ROTANDO)' : 'DETENIDO'}
               </span>
             </div>
             <div className="flex justify-between">

@@ -104,7 +104,7 @@ export default function ContactSection({ products }: ContactSectionProps) {
 
               {/* Correo Electrónico card */}
               <a
-                href="mailto:dyhsteelsas@hotmail.com"
+                href="mailto:dyhinoxsas@hotmail.com"
                 className="group flex items-center gap-4 bg-red-50/70 border border-red-100 hover:border-red-300 rounded-2xl p-4 transition-all duration-300 shadow-sm"
               >
                 <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform shrink-0">
@@ -112,7 +112,7 @@ export default function ContactSection({ products }: ContactSectionProps) {
                 </div>
                 <div>
                   <div className="text-[10px] font-mono text-red-700 uppercase tracking-widest font-bold">Correo Corporativo</div>
-                  <div className="text-slate-900 font-bold text-sm mt-0.5 break-all group-hover:text-red-600 transition-colors">dyhsteelsas@hotmail.com</div>
+                  <div className="text-slate-900 font-bold text-sm mt-0.5 break-all group-hover:text-red-600 transition-colors">dyhinoxsas@hotmail.com</div>
                   <div className="text-slate-600 text-xs">Envíenos sus planos o requerimientos técnicos</div>
                 </div>
               </a>

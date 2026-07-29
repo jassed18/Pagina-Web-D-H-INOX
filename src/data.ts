@@ -2,121 +2,129 @@ import { Product } from './types';
 
 export const INITIAL_PRODUCTS: Product[] = [
   {
-    id: 'marmita-semi-automatica',
+    id: 'marmita-automatica-volcable',
     category: 'marmita',
-    name: 'Marmita Semi-Automática DYH',
-    subtitle: 'Solución eficiente con control analógico avanzado',
-    description: 'La Marmita Semi-Automática DYH combina la robustez del acero inoxidable 304 con un panel de control manual optimizado para operaciones de precisión. Ideal para procesos de cocción que requieren supervisión constante y flexibilidad operativa.',
+    name: 'Marmita Automática Volcable',
+    subtitle: 'Solución inteligente con sistema de volteo motorizado',
+    description: 'La Marmita Automática Volcable DYH ofrece control total sobre las variables críticas de cocción. Su pantalla táctil e interfaz inteligente permiten programar ciclos de cocción, volteo automatizado y control térmico preciso.',
     generalSpecs: [
       'Capacidades disponibles: 20, 40, 60, 80, 100 y 120 galones.',
-      'Fabricada totalmente en acero inoxidable Ref. 304 (grado alimenticio).',
-      'Material a prueba de ácidos y magnéticos.',
-      'Calentamiento por gas natural (transferencia indirecta de calor por glicerina biodegradable).',
-      'Opciones de calentamiento alternativo: Eléctrico o a Vapor.'
+      'Estructura compacta e higiénica totalmente en acero inoxidable Ref. 304.',
+      'Sistema de volteo motorizado con seguro electromecánico de posición.',
+      'Calentamiento por transferencia indirecta con glicerina biodegradable.',
+      'Pantalla táctil interactiva con almacenamiento de programas de cocción.'
     ],
     features: [
       {
-        title: 'Componentes del Tablero de Control',
+        title: 'Panel de Control y Pantalla Táctil',
         items: [
-          'Botones de inclinamiento para el sistema de volteo de la olla.',
-          'Botón de paro de emergencia (E-STOP) para detener de inmediato todos los accionamientos mecánicos.',
-          'Interruptor Burner para encendido automático del quemador.',
-          'Controlador digital de temperatura (PV/SV) para conocer la temperatura actual y programar el límite esperado.',
-          'Botón selector para encendido y direccionamiento del agitador (rotación reversa o directa).'
+          'E-STOP: Paro de emergencia electromecánico de anulación inmediata de fuerza.',
+          'TURN CONTROL: Volteo automático motorizado para descargue rápido y seguro.',
+          'PANTALLA TÁCTIL INTELIGENTE (Delta / Xinje): Control de temperaturas, tiempos y programas.',
+          'WATER FILL: Control del nivel de agua automatizado para llenado rápido de la olla.',
+          'HEAT ALERTS: Indicador visual de calentamiento activo y alertas de seguridad.'
         ]
       },
       {
-        title: 'Detalles del Tanque y Estructura',
+        title: 'Estructura y Tanque Sanitario',
         items: [
-          'Estructura de soporte robusta con ruedas giratorias de alta resistencia con freno.',
-          'Tanque de cocción con chaqueta para fluido de transferencia de calor.',
-          'Acabado sanitario de fácil limpieza.'
+          'Chaqueta de calentamiento indirecto con fluido térmico / glicerina grado alimenticio.',
+          'Válvula de seguridad por sobrepresión y termostato de protección térmica.',
+          'Acabado sanitario de pulido espejo en bordes y soldaduras TIG de penetración completa.'
         ]
       }
     ],
     specifications: [
       { label: 'Capacidad', value: '20 - 120 Galones' },
       { label: 'Material', value: 'Acero Inoxidable Ref. 304' },
+      { label: 'Controlador', value: 'Pantalla Táctil Inteligente' },
+      { label: 'Sistema Volteo', value: 'Automático / Motorizado' },
       { label: 'Calentamiento', value: 'Gas Natural / Eléctrico / Vapor' },
-      { label: 'Fluido Térmico', value: 'Glicerina Grado Alimenticio / Biodegradable' },
-      { label: 'Control Agitación', value: 'Selectores de dirección y velocidad' },
-      { label: 'Movilidad', value: 'Ruedas con freno de seguridad' }
+      { label: 'Llenado Agua', value: 'Control Water Fill Automático' }
     ],
     status: 'disponible'
   },
   {
-    id: 'marmita-automatica',
+    id: 'marmita-automatica-volcable-agitador',
     category: 'marmita',
-    name: 'Marmita Automática Inteligente DYH',
-    subtitle: 'Control total digitalizado y automatización para recetas',
-    description: 'La Marmita Automática DYH ofrece control absoluto sobre las variables críticas de cocción. Su pantalla táctil HMI permite guardar recetas, automatizar ciclos y asegurar la homogeneidad y repetibilidad del producto final.',
+    name: 'Marmita Automática Volcable con Agitador',
+    subtitle: 'Cocción homogénea con agitación constante de velocidad variable',
+    description: 'Integra el sistema de volteo motorizado inteligente con un potente sistema de agitación constante. Ideal para sopas, cremas, salsas y preparaciones que requieren mezcla continua sin adherencia.',
     generalSpecs: [
-      'Capacidades disponibles: 20 a 120 galones.',
-      'Estructura compacta e higiénica en acero inoxidable Ref. 304.',
-      'Sistema de volteo motorizado y automatizado.',
-      'Control preciso de temperatura, tiempo y velocidad de agitación.',
-      'Sistemas de seguridad redundantes.'
+      'Capacidades disponibles: 20 a 120 galones en acero inoxidable Ref. 304.',
+      'Sistema de agitación con variador de frecuencia (VFD) integrado.',
+      'Raspadores de teflón de grado alimenticio auto-ajustables.',
+      'Pantalla táctil con control programable de velocidad de agitación y recetas.',
+      'Volteo motorizado automático para descargue completo.'
     ],
     features: [
       {
-        title: 'Interfaz HMI & Panel de Pantalla',
+        title: 'Agitación y Mezclado Inteligente',
         items: [
-          'E-STOP: Paro de emergencia electromecánico para anulación de fuerza.',
-          'MIXER Mode: Selector automático/manual del modo de operación del mezclador basado en recetas.',
-          'TURN CONTROL: Volteo automático motorizado para un descargue de alimentos rápido y seguro.',
-          'PANTALLA HMI Delta/Xinje: Modificación intuitiva de velocidades, temperaturas y tiempos de cocción.',
-          'WATER FILL: Control del nivel de agua automatizado para el llenado óptimo de la olla.',
-          'HEAT: Indicador visual de encendido y sistema de alerta de fallas.'
+          'Mezclador de eje balanceado con sentido de rotación directo y reverso.',
+          'Raspadores de teflón que barren continuamente las paredes evitando que el producto se adhiera.',
+          'Modo MIXER automatizado sincronizado con la temperatura y el tiempo del ciclo.',
+          'Variador de frecuencia VFD para regulación suave de la velocidad.'
         ]
       },
       {
-        title: 'Control por Recetas',
+        title: 'Automatización y Seguridad',
         items: [
-          'Memoria integrada para múltiples programas de cocción.',
-          'Monitoreo gráfico en tiempo real de temperatura y ciclo.',
-          'Control de velocidad de agitación proporcional (VFD).'
+          'Botón de paro de emergencia E-STOP y protección contra sobrecalentamiento.',
+          'Pantalla táctil inteligente para programación y almacenamiento de recetas.',
+          'Sistema automático de llenado de agua (Water Fill).'
         ]
       }
     ],
     specifications: [
       { label: 'Capacidad', value: '20 - 120 Galones' },
       { label: 'Material', value: 'Acero Inoxidable Ref. 304' },
-      { label: 'Controlador', value: 'Pantalla HMI Táctil (Delta / Xinje)' },
-      { label: 'Volteo', value: 'Automático / Motorizado' },
-      { label: 'Sistema de Llenado', value: 'Control Water Fill Automático' },
-      { label: 'Velocidad de Agitación', value: 'Regulación Electrónica por Receta' }
+      { label: 'Agitación', value: 'Mezclador Continuo con Raspadores Teflón' },
+      { label: 'Regulación Speed', value: 'Variador VFD Electrónico' },
+      { label: 'Controlador', value: 'Pantalla Táctil e Interfaz Inteligente' },
+      { label: 'Sistema Volteo', value: 'Automático Motorizado' }
     ],
     status: 'disponible'
   },
   {
-    id: 'agitador-industrial',
+    id: 'marmita-automatica-volcable-agitador-doble-accion',
     category: 'marmita',
-    name: 'Agitador Tipo Ancla de Doble Acción',
-    subtitle: 'Máxima potencia para mezclas densas y alimentos pesados',
-    description: 'Diseñado específicamente para optimizar la transferencia de calor y mantener la homogeneidad en alimentos espesos. Evita que el producto se adhiera a las paredes del tanque gracias a sus raspadores activos.',
+    name: 'Marmita Automática Volcable con Agitador de Doble Acción',
+    subtitle: 'Máxima potencia para mezclas de alta densidad y viscosidad',
+    description: 'Equipada con agitador tipo ancla de doble acción y motores tándem de alto torque. Diseñada para productos exigentes como arequipe, chocolates, mermeladas y masas pesadas que requieren esfuerzo mecánico superior.',
     generalSpecs: [
-      'Manufacturado en acero inoxidable Ref. 304.',
-      'Raspadores de teflón de grado alimenticio auto-ajustables.',
-      'Accionado por motoreductor trifásico tándem de alto torque.',
-      'Diseño desmontable para un mantenimiento rápido.'
+      'Capacidades de 20 a 120 galones totalmente en acero inoxidable sanitario Ref. 304.',
+      'Sistema de agitación de doble acción para máxima homogeneidad.',
+      'Raspadores de teflón de alto rendimiento para barrido periférico completo.',
+      'Motoreductor trifásico tándem de alto torque con protección de sobrecarga.',
+      'Pantalla táctil inteligente con gestión avanzada de recetas complejas.'
     ],
     features: [
       {
-        title: 'Características Destacadas',
+        title: 'Agitador Tipo Ancla Doble Acción',
         items: [
-          'Diseño de tipo ancla para fácil desmonte y posterior descargue de la olla.',
-          'Sistemas de doble acción para mayor potencia en mezclas densas o manejo de alimentos pesados.',
-          'Raspadores de teflón que barren continuamente las paredes de la olla para evitar quemaduras o adherencias.',
-          'Eje rectificado balanceado para evitar vibraciones en la marmita.'
+          'Mecanismo de doble acción de alta potencia para mezclas ultra densas.',
+          'Raspadores de teflón auto-ajustables que evitan quemaduras y adherencias.',
+          'Eje rectificado removible de fácil desmonte y desinfección sanitaria.',
+          'Selección de velocidad e inversión de marcha electrónica por receta.'
+        ]
+      },
+      {
+        title: 'Control por Pantalla Táctil',
+        items: [
+          'Memorización de parámetros exactos de viscosidad, temperatura y tiempo.',
+          'Supervisión gráfica de curvas de cocción en tiempo real.',
+          'Volteo motorizado automático de inclinación progresiva.'
         ]
       }
     ],
     specifications: [
-      { label: 'Material', value: 'Acero Inoxidable Ref. 304' },
-      { label: 'Raspadores', value: 'Teflón Grado Alimenticio' },
-      { label: 'Motorización', value: 'Motoreductor Trifásico Tándem' },
-      { label: 'Tipo de Diseño', value: 'Ancla Removible' },
-      { label: 'Acción', value: 'Doble Acción Seleccionable' }
+      { label: 'Capacidad', value: '20 - 120 Galones' },
+      { label: 'Material', value: 'Acero Inoxidable Ref. 304 Sanitario' },
+      { label: 'Tipo Agitador', value: 'Doble Acción Ancla con Raspadores Teflón' },
+      { label: 'Motorización', value: 'Motoreductor Trifásico Tándem Alto Torque' },
+      { label: 'Controlador', value: 'Pantalla Táctil Inteligente (Delta / Xinje)' },
+      { label: 'Inclinación', value: 'Volteo Motorizado Automático' }
     ],
     status: 'disponible'
   },

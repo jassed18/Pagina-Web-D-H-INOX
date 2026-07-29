@@ -1,4 +1,5 @@
 import React from 'react';
+import logoImg from '../assets/logo.jpg';
 
 interface BrandLogoProps {
   className?: string;
@@ -17,7 +18,7 @@ export default function BrandLogo({ className = '', size = 'md' }: BrandLogoProp
   return (
     <div className={`flex flex-col items-center select-none ${className}`}>
       <img
-        src="/logo.jpg"
+        src={logoImg}
         alt="D&H INOX SAS - Calidad y Tecnología"
         className={`${sizeClasses} w-auto object-contain rounded-xl shadow-lg border border-slate-700/60 transition-transform duration-300 hover:scale-102`}
         referrerPolicy="no-referrer"

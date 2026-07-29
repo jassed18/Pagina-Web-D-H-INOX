@@ -190,8 +190,8 @@ export default function App() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="space-y-4"
           >
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold font-sans tracking-tight text-slate-900 max-w-3xl leading-none">
-              Soluciones de Alta Ingeniería en <span className="text-transparent bg-clip-text logo-gradient">Acero Inoxidable</span>
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold font-sans tracking-tight text-slate-900 max-w-3xl leading-tight">
+              Soluciones de Alta <span className="bg-gradient-to-r from-red-600 via-slate-900 to-blue-600 bg-clip-text text-transparent">Calidad y Tecnología</span>
             </h1>
             
             <p className="text-slate-600 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">

@@ -1,41 +1,34 @@
-# Guía para Subir a Hostinger (100% Estático - Sin Node.js)
+# Guía para el Plan Hostinger "Premium Web Hosting (Sin apps Node.js)"
 
-Tu aplicación está configurada para funcionar como un **sitio web estático puro (HTML, CSS y JavaScript)**. 
-**NO necesitas tener Node.js instalado en Hostinger** ni contratar un VPS costoso. Funciona en cualquier plan de Hosting Compartido de Hostinger (hPanel / cPanel).
+## ✅ ¡Buenas noticias!
+Tu sitio web **es 100% compatible con tu plan de Hostinger (Sin apps Node.js)**.
 
----
-
-## 🚀 Paso a Paso para Subir a Hostinger (El método más fácil)
-
-### Método 1: Administrador de Archivos de Hostinger (Recomendado - 2 minutos)
-
-1. Ingresa a tu panel de **Hostinger (hPanel)**.
-2. Ve a la sección **Sitios web** y haz clic en **Administrar** en tu dominio.
-3. En el menú lateral o buscador, entra a **Administrador de Archivos** (File Manager).
-4. Entra a la carpeta **`public_html`**.
-5. Si hay un archivo por defecto llamado `default.php` o una página en blanco de bienvenida de Hostinger, bórrala.
-6. Sube **todo el contenido que está DENTRO de la carpeta `dist`**:
-   - `index.html`
-   - `.htaccess`
-   - `logo.jpg`
-   - La carpeta `assets/` (con todos sus archivos .js y .css adentro)
-
-> ⚠️ **IMPORTANTE:** Sube lo que está **adentro** de `dist`, directamente en `public_html` (no subas la carpeta `dist` en sí, para que al abrir tudominio.com cargue de inmediato).
+### ¿Por qué?
+- En Hostinger, **"Sin apps Node.js"** significa que el servidor no ejecuta procesos de backend en segundo plano (como Express, servidores API o SSR).
+- Tu página web **NO necesita ningún servidor Node.js en Hostinger**. Es una web **100% estática (HTML5, CSS y JavaScript)** que se ejecuta completamente en el navegador del visitante.
 
 ---
 
-### ¿Cómo generar una nueva versión si haces cambios?
+## ⚡ La forma más rápida de subirlo a Hostinger (Menos de 1 minuto)
 
-Si en el futuro haces cambios en el código en tu computadora:
-1. Ejecuta:
-   ```bash
-   npm run build
-   ```
-2. Esto actualizará la carpeta `dist/` con los archivos listos para subir.
-3. Vuelves a reemplazar los archivos en `public_html` de Hostinger.
+Hemos preparado en el proyecto el archivo comprimido listo para usar:
+📁 **`hostinger_subir_a_public_html.zip`** (o los archivos dentro de la carpeta `dist/`).
+
+### Pasos exactos en Hostinger (hPanel):
+
+1. **Inicia sesión** en [Hostinger](https://hpanel.hostinger.com/).
+2. Ve a **Sitios web** ➔ Haz clic en **Administrar** en tu dominio.
+3. Busca y entra en **Administrador de Archivos** (File Manager).
+4. Abre la carpeta **`public_html`**.
+5. Si ves un archivo `default.php` o una página de bienvenida antigua, elimínala.
+6. Haz clic en el botón **Subir** (ícono de flecha hacia arriba) y sube el archivo **`hostinger_subir_a_public_html.zip`**.
+7. Haz clic derecho sobre el archivo subido y selecciona **Extraer** (Extract). Confirma para que se extraiga ahí mismo en `public_html`.
+8. ¡Listo! Abre tu dominio en tu navegador y verás tu página web funcionando a la perfección con su logo, catálogo y funciones.
 
 ---
 
-### ¿Por qué ya no tienes problemas con rutas ni pantalla blanca?
-- **Rutas Relativas (`./assets/`)**: El proyecto ahora compila con rutas relativas, lo que permite que funcione en la raíz de tu dominio o en cualquier subcarpeta.
-- **Archivo `.htaccess` incluido**: Ya está preconfigurado para Apache / LiteSpeed de Hostinger para habilitar caché rápido y asegurar que todo cargue sin error 404.
+### ¿Qué contiene el paquete estático?
+- `index.html`: La estructura completa de tu página web.
+- `logo.jpg`: Tu logo optimizado.
+- `.htaccess`: Reglas de Apache/LiteSpeed para que cargue ultra rápido con caché y sin errores 404.
+- `assets/`: Todo el diseño (CSS) y las animaciones/lógica interactiva (JavaScript) compilados y listos para cualquier navegador.

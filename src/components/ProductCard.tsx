@@ -124,7 +124,7 @@ export default function ProductCard({ product, onSelectProduct, onInquire }: Pro
       <div className="p-6 bg-slate-50 border-b border-slate-100 flex items-center justify-center relative overflow-hidden group">
         
         {/* Decorative blueprint grids */}
-        <div className="absolute inset-0 bg-grid-slate/30 pointer-events-none" />
+        <div className="absolute inset-0 bg-grid-slate opacity-60 pointer-events-none" />
         
         {renderSchematic()}
 

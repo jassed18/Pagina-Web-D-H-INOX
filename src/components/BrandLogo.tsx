@@ -24,11 +24,10 @@ export default function BrandLogo({ className = '', size = 'md' }: BrandLogoProp
         <img
           src={imgSrc}
           alt="D&H INOX SAS - Calidad y Tecnología"
-          className={`${sizeClasses} w-auto object-contain rounded-xl shadow-lg border border-slate-700/60 transition-transform duration-300 hover:scale-102`}
-          referrerPolicy="no-referrer"
+          className={`${sizeClasses} w-auto object-contain rounded-xl shadow-lg border border-slate-700/60 transition-transform duration-300 hover:scale-[1.02]`}
           onError={() => {
-            if (imgSrc !== '/logo.jpg') {
-              setImgSrc('/logo.jpg');
+            if (imgSrc !== './logo.jpg') {
+              setImgSrc('./logo.jpg');
             } else {
               setHasError(true);
             }
@@ -36,11 +35,9 @@ export default function BrandLogo({ className = '', size = 'md' }: BrandLogoProp
         />
       ) : (
         <div className={`${sizeClasses} px-4 py-2 bg-slate-900 border border-slate-700 rounded-xl flex items-center justify-center`}>
-          <span className="font-mono font-black text-white tracking-widest text-sm">D&H INOX SAS</span>
+          <span className="font-mono font-black text-white tracking-widest text-sm">D&amp;H INOX SAS</span>
         </div>
       )}
     </div>
   );
 }
-
-

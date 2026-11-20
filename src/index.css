@@ -1,22 +1,49 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap');
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme {
-  --font-sans: 'Inter', sans-serif;
-  --font-display: 'Space Grotesk', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.25s ease-out forwards;
+  }
+
   /* Bento card definition */
   .bento-card {
-    background: white;
+    background: #ffffff;
     border: 1px solid #E2E8F0;
     border-radius: 1.5rem;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+      transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
   }
-  
+
   .bento-card:hover {
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
     border-color: #CBD5E1;
@@ -34,4 +61,3 @@
     background: linear-gradient(135deg, #0F172A 0%, #334155 100%);
   }
 }
-

@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Phone, Mail, MapPin, Send, MessageCircle, CheckCircle } from 'lucide-react';
-import { Product } from '../types';
+import { ContactMessage, Product } from '../types';
+import { safeParseJSON, safeStorage } from '../utils/browser';
 
 interface ContactSectionProps {
   products: Product[];
+  preselectedProduct?: { name: string; trigger: number } | null;
 }
 
-export default function ContactSection({ products }: ContactSectionProps) {
+export default function ContactSection({ products, preselectedProduct }: ContactSectionProps) {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -17,22 +19,37 @@ export default function ContactSection({ products }: ContactSectionProps) {
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
 
+  useEffect(() => {
+    if (preselectedProduct?.name) {
+      setFormData((prev) => ({
+        ...prev,
+        productInterest: preselectedProduct.name,
+      }));
+    }
+  }, [preselectedProduct]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.email || !formData.message) return;
 
-    // Save message to localStorage so Admin can read it!
-    const existingMessagesJson = localStorage.getItem('dh_contact_messages');
-    const existingMessages = existingMessagesJson ? JSON.parse(existingMessagesJson) : [];
-    
-    const newMessage = {
+    const existingMessages = safeParseJSON<ContactMessage[]>(
+      safeStorage.getItem('dh_contact_messages'),
+      []
+    );
+
+    const newMessage: ContactMessage = {
       id: 'msg-' + Date.now(),
       ...formData,
       createdAt: new Date().toISOString(),
-      status: 'nuevo'
+      status: 'nuevo',
     };
 
-    localStorage.setItem('dh_contact_messages', JSON.stringify([newMessage, ...existingMessages]));
+    safeStorage.setItem('dh_contact_messages', JSON.stringify([newMessage, ...existingMessages]));
+    try {
+      window.dispatchEvent(new Event('dh_messages_updated'));
+    } catch {
+      // Ignore event dispatch failure on legacy environments
+    }
 
     setIsSubmitted(true);
     setFormData({
@@ -43,7 +60,6 @@ export default function ContactSection({ products }: ContactSectionProps) {
       message: '',
     });
 
-    // Auto clear success alert after 5 seconds
     setTimeout(() => setIsSubmitted(false), 5000);
   };
 
@@ -63,18 +79,14 @@ export default function ContactSection({ products }: ContactSectionProps) {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-          
           {/* Quick Contact & Info Grid (Left Side) */}
           <div className="lg:col-span-5 flex flex-col justify-between gap-6">
-            
-            {/* Quick Contact Cards */}
             <div className="space-y-4">
-              
               {/* WhatsApp direct link card */}
               <a
                 href="https://wa.me/573212749981?text=Hola%20D%26H%20Inox,%20quisiera%20solicitar%20asesor%C3%ADa%20acerca%20de%20sus%20productos."
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="group flex items-center gap-4 bg-emerald-50/70 border border-emerald-100 hover:border-emerald-300 rounded-2xl p-4 transition-all duration-300 shadow-sm"
               >
                 <div className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform shrink-0">
@@ -128,20 +140,15 @@ export default function ContactSection({ products }: ContactSectionProps) {
                   <div className="text-slate-600 text-xs">Bogotá, Colombia</div>
                 </div>
               </div>
-
             </div>
 
-            {/* Informational Note */}
             <div className="p-4 bg-white rounded-2xl border border-slate-200 text-xs text-slate-600 leading-relaxed shadow-sm">
               <strong className="text-slate-900">Garantía de Calidad:</strong> Todas nuestras marmitas y pass-through se fabrican bajo estrictas normas de bioseguridad, utilizando soldaduras sanitarias TIG de penetración completa y pulido espejo en bordes internos para evitar acumulaciones patógenas.
             </div>
-
           </div>
 
           {/* Form Section (Right Side) */}
           <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-6 md:p-8 relative overflow-hidden shadow-sm">
-            
-            {/* Header Form */}
             <div className="mb-6">
               <h3 className="text-lg font-bold text-slate-900">Formulario de Solicitud de Cotización</h3>
               <p className="text-slate-600 text-xs mt-1">
@@ -149,7 +156,6 @@ export default function ContactSection({ products }: ContactSectionProps) {
               </p>
             </div>
 
-            {/* Success message animation */}
             <AnimatePresence>
               {isSubmitted && (
                 <motion.div
@@ -169,9 +175,7 @@ export default function ContactSection({ products }: ContactSectionProps) {
               )}
             </AnimatePresence>
 
-            {/* Main Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
-              
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-mono font-bold text-slate-700 uppercase tracking-wider mb-1.5">
@@ -183,7 +187,7 @@ export default function ContactSection({ products }: ContactSectionProps) {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="Ej. Alimentos del Valle S.A.S."
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 transition-colors"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 transition-colors"
                   />
                 </div>
 
@@ -196,7 +200,7 @@ export default function ContactSection({ products }: ContactSectionProps) {
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     placeholder="Ej. +57 300 123 4567"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 transition-colors"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 transition-colors"
                   />
                 </div>
               </div>
@@ -211,7 +215,7 @@ export default function ContactSection({ products }: ContactSectionProps) {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="compras@empresa.com"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 transition-colors"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 transition-colors"
                 />
               </div>
 
@@ -244,7 +248,7 @@ export default function ContactSection({ products }: ContactSectionProps) {
                   value={formData.message}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                   placeholder="Por favor, detalle la capacidad requerida (galones o cabinas), tipo de calentamiento preferido y cualquier especificación especial..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 transition-colors resize-none"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 transition-colors resize-none"
                 />
               </div>
 
@@ -255,11 +259,8 @@ export default function ContactSection({ products }: ContactSectionProps) {
                 <Send size={14} />
                 Enviar Requerimiento
               </button>
-
             </form>
-
           </div>
-
         </div>
       </div>
     </section>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Product, ContactMessage } from '../types';
-import { Lock, LogIn, LogOut, Plus, Trash2, Edit3, MessageCircle, FileText, CheckCircle, RefreshCw, X, Shield, Eye, Database } from 'lucide-react';
+import { Lock, LogIn, LogOut, Plus, Trash2, Edit3, MessageCircle, CheckCircle, RefreshCw, X, Shield, Database } from 'lucide-react';
+import { safeParseJSON, safeStorage } from '../utils/browser';
 
 interface AdminPanelProps {
   products: Product[];
@@ -19,16 +20,13 @@ export default function AdminPanel({
   onRestoreDefaults,
   onClose,
 }: AdminPanelProps) {
-  // Auth state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
 
-  // Tab state
   const [activeTab, setActiveTab] = useState<'productos' | 'mensajes'>('productos');
 
-  // Product Form state
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [formFields, setFormFields] = useState({
@@ -38,26 +36,50 @@ export default function AdminPanel({
     description: '',
     status: 'disponible' as 'disponible' | 'bajo_pedido',
     generalSpecsStr: '',
-    featuresStr: '', // comma or newline separated features
-    specificationsStr: '', // Format Label:Value per line
+    featuresStr: '',
+    specificationsStr: '',
   });
 
-  // Contact messages state
   const [messages, setMessages] = useState<ContactMessage[]>([]);
+  const [confirmDeleteProdId, setConfirmDeleteProdId] = useState<string | null>(null);
+  const [confirmDeleteMsgId, setConfirmDeleteMsgId] = useState<string | null>(null);
+  const [confirmRestore, setConfirmRestore] = useState(false);
+  const [statusNotice, setStatusNotice] = useState<string | null>(null);
 
   useEffect(() => {
-    // Read messages from localStorage
     const loadMessages = () => {
-      const stored = localStorage.getItem('dh_contact_messages');
-      if (stored) {
-        setMessages(JSON.parse(stored));
-      }
+      const parsed = safeParseJSON<ContactMessage[]>(
+        safeStorage.getItem('dh_contact_messages'),
+        []
+      );
+      setMessages(Array.isArray(parsed) ? parsed : []);
     };
     loadMessages();
-    // Add event listener to capture new messages instantly
     window.addEventListener('storage', loadMessages);
-    return () => window.removeEventListener('storage', loadMessages);
-  }, []);
+    window.addEventListener('dh_messages_updated', loadMessages);
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (isFormOpen) {
+          setIsFormOpen(false);
+        } else {
+          onClose();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('storage', loadMessages);
+      window.removeEventListener('dh_messages_updated', loadMessages);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isFormOpen, onClose]);
+
+  const showNotice = (text: string) => {
+    setStatusNotice(text);
+    setTimeout(() => setStatusNotice(null), 4000);
+  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,7 +97,6 @@ export default function AdminPanel({
     setPassword('');
   };
 
-  // Open Form to ADD product
   const openAddForm = () => {
     setEditingProduct(null);
     setFormFields({
@@ -91,7 +112,6 @@ export default function AdminPanel({
     setIsFormOpen(true);
   };
 
-  // Open Form to EDIT product
   const openEditForm = (prod: Product) => {
     setEditingProduct(prod);
     setFormFields({
@@ -101,35 +121,32 @@ export default function AdminPanel({
       description: prod.description,
       status: prod.status,
       generalSpecsStr: prod.generalSpecs.join('\n'),
-      featuresStr: prod.features.map(f => `${f.title}:\n${f.items.join('\n')}`).join('\n\n'),
-      specificationsStr: prod.specifications.map(s => `${s.label}:${s.value}`).join('\n'),
+      featuresStr: prod.features.map((f) => `${f.title}:\n${f.items.join('\n')}`).join('\n\n'),
+      specificationsStr: prod.specifications.map((s) => `${s.label}:${s.value}`).join('\n'),
     });
     setIsFormOpen(true);
   };
 
-  // Handle Form Submission
   const handleSaveProduct = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formFields.name || !formFields.description) return;
 
-    // Parse structures
-    const generalSpecs = formFields.generalSpecsStr.split('\n').filter(s => s.trim() !== '');
-    
-    // Parse specs Format "Label:Value"
-    const specifications = formFields.specificationsStr.split('\n')
-      .filter(line => line.includes(':'))
-      .map(line => {
+    const generalSpecs = formFields.generalSpecsStr.split('\n').filter((s) => s.trim() !== '');
+
+    const specifications = formFields.specificationsStr
+      .split('\n')
+      .filter((line) => line.includes(':'))
+      .map((line) => {
         const parts = line.split(':');
         return {
           label: parts[0].trim(),
-          value: parts.slice(1).join(':').trim()
+          value: parts.slice(1).join(':').trim(),
         };
       });
 
-    // Parse features "Title:\nItem1\nItem2\n\nTitle2:\nItem1"
-    const featureBlocks = formFields.featuresStr.split('\n\n').filter(b => b.trim() !== '');
-    const features = featureBlocks.map(block => {
-      const lines = block.split('\n').filter(l => l.trim() !== '');
+    const featureBlocks = formFields.featuresStr.split('\n\n').filter((b) => b.trim() !== '');
+    const features = featureBlocks.map((block) => {
+      const lines = block.split('\n').filter((l) => l.trim() !== '');
       const title = lines[0].endsWith(':') ? lines[0].slice(0, -1).trim() : lines[0].trim();
       const items = lines.slice(1);
       return { title, items };
@@ -144,61 +161,60 @@ export default function AdminPanel({
       generalSpecs,
       features,
       specifications,
-      status: formFields.status
+      status: formFields.status,
     };
 
     if (editingProduct) {
       onEditProduct(productData);
+      showNotice('Producto actualizado correctamente.');
     } else {
       onAddProduct(productData);
+      showNotice('Nuevo producto añadido al catálogo.');
     }
 
     setIsFormOpen(false);
   };
 
-  // Toggle Message status read/unread
   const toggleMessageStatus = (msgId: string) => {
-    const updated = messages.map(m => {
+    const updated = messages.map((m) => {
       if (m.id === msgId) {
         return { ...m, status: m.status === 'nuevo' ? 'leido' : 'nuevo' } as ContactMessage;
       }
       return m;
     });
     setMessages(updated);
-    localStorage.setItem('dh_contact_messages', JSON.stringify(updated));
+    safeStorage.setItem('dh_contact_messages', JSON.stringify(updated));
   };
 
   const deleteMessage = (msgId: string) => {
-    if (!confirm('¿Está seguro de eliminar este mensaje de contacto?')) return;
-    const updated = messages.filter(m => m.id !== msgId);
+    const updated = messages.filter((m) => m.id !== msgId);
     setMessages(updated);
-    localStorage.setItem('dh_contact_messages', JSON.stringify(updated));
+    setConfirmDeleteMsgId(null);
+    safeStorage.setItem('dh_contact_messages', JSON.stringify(updated));
   };
 
   return (
     <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-      
-      {/* Central modal card */}
       <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col my-8 max-h-[90vh]">
-        
         {/* Header bar */}
         <div className="bg-gradient-to-r from-red-600 via-slate-800 to-blue-600 p-4 flex items-center justify-between text-white border-b border-slate-700 shrink-0">
           <div className="flex items-center gap-2">
             <Shield size={20} className="text-yellow-400" />
             <div>
-              <h2 className="text-sm font-bold uppercase tracking-widest font-mono">Panel Administrativo D&H INOX</h2>
+              <h2 className="text-sm font-bold uppercase tracking-widest font-mono">Panel Administrativo D&amp;H INOX</h2>
               <p className="text-[10px] text-slate-300 font-mono">Gestión de Catálogo y Solicitudes de Cotización</p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
+            aria-label="Cerrar panel"
             className="w-8 h-8 rounded-full bg-slate-800/60 hover:bg-slate-800 flex items-center justify-center text-white transition-colors"
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* 1. NOT LOGGED IN STATE */}
         {!isLoggedIn ? (
           <div className="p-8 max-w-md mx-auto w-full text-center my-12">
             <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center text-blue-500 mx-auto mb-6 border border-slate-700 shadow-inner">
@@ -255,43 +271,65 @@ export default function AdminPanel({
             </form>
           </div>
         ) : (
-          /* 2. ADMIN PORTAL LOGGED IN STATE */
           <div className="flex-1 flex flex-col overflow-hidden">
-            
-            {/* Navigation Tabs bar inside Panel */}
+            {/* Navigation Tabs bar */}
             <div className="bg-slate-950 px-6 py-2 border-b border-slate-800 flex flex-wrap items-center justify-between gap-4 shrink-0">
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <button
+                  type="button"
                   onClick={() => setActiveTab('productos')}
                   className={`px-4 py-1.5 rounded-lg text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-2 ${
-                    activeTab === 'productos'
-                      ? 'bg-blue-600 text-white'
-                      : 'text-slate-400 hover:text-slate-200'
+                    activeTab === 'productos' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
                   <Database size={14} /> Gestión de Productos ({products.length})
                 </button>
                 <button
+                  type="button"
                   onClick={() => setActiveTab('mensajes')}
                   className={`px-4 py-1.5 rounded-lg text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-2 ${
-                    activeTab === 'mensajes'
-                      ? 'bg-red-600 text-white'
-                      : 'text-slate-400 hover:text-slate-200'
+                    activeTab === 'mensajes' ? 'bg-red-600 text-white' : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
                   <MessageCircle size={14} /> Solicitudes de Cotización ({messages.length})
                 </button>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
+                {confirmRestore ? (
+                  <div className="flex items-center gap-2 bg-amber-950/60 border border-amber-700/50 px-2.5 py-1 rounded text-xs font-mono">
+                    <span className="text-amber-300">¿Restaurar catálogo?</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onRestoreDefaults();
+                        setConfirmRestore(false);
+                        showNotice('Se han restaurado los productos originales de D&H Inox.');
+                      }}
+                      className="px-2 py-0.5 bg-amber-600 hover:bg-amber-500 text-white rounded"
+                    >
+                      Sí
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmRestore(false)}
+                      className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded"
+                    >
+                      No
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setConfirmRestore(true)}
+                    className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs font-mono flex items-center gap-1 transition-colors"
+                    title="Restaura la información original de los PDFs de D&H Inox"
+                  >
+                    <RefreshCw size={12} /> Restaurar PDF por defecto
+                  </button>
+                )}
                 <button
-                  onClick={onRestoreDefaults}
-                  className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs font-mono flex items-center gap-1 transition-colors"
-                  title="Restaura la información original de los PDFs de D&H Inox"
-                >
-                  <RefreshCw size={12} /> Restaurar PDF por defecto
-                </button>
-                <button
+                  type="button"
                   onClick={handleLogout}
                   className="px-3 py-1 bg-red-950/60 border border-red-900/30 text-red-400 hover:bg-red-900 hover:text-white rounded text-xs font-mono flex items-center gap-1 transition-all"
                 >
@@ -300,20 +338,28 @@ export default function AdminPanel({
               </div>
             </div>
 
-            {/* Panel Central Body Content (With custom scrolling) */}
+            {statusNotice && (
+              <div className="bg-emerald-950/80 border-b border-emerald-700/40 px-6 py-2 text-xs font-mono text-emerald-300 flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <CheckCircle size={14} /> {statusNotice}
+                </span>
+                <button type="button" onClick={() => setStatusNotice(null)} className="text-emerald-400 hover:text-white">
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+
+            {/* Panel Central Body Content */}
             <div className="flex-1 overflow-y-auto p-6 bg-slate-900 text-slate-200">
-              
-              {/* TAB 1: PRODUCT MANAGEMENT */}
               {activeTab === 'productos' && (
                 <div className="space-y-6">
-                  
-                  {/* Headline & Add Product Button */}
-                  <div className="flex justify-between items-center bg-slate-950 p-4 rounded-xl border border-slate-800">
+                  <div className="flex flex-wrap gap-4 justify-between items-center bg-slate-950 p-4 rounded-xl border border-slate-800">
                     <div>
                       <h3 className="text-sm font-bold text-slate-100 font-mono">Listado General de Equipos</h3>
                       <p className="text-xs text-slate-400">Modifique los atributos, descripciones o añada nuevos productos al catálogo.</p>
                     </div>
                     <button
+                      type="button"
                       onClick={openAddForm}
                       className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors"
                     >
@@ -321,28 +367,28 @@ export default function AdminPanel({
                     </button>
                   </div>
 
-                  {/* Products Editable Grid/Table */}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {products.map((p) => (
                       <div key={p.id} className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col justify-between hover:border-slate-700 transition-all">
                         <div>
                           <div className="flex items-center justify-between">
-                            <span className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase ${
-                              p.category === 'marmita' ? 'bg-orange-600/10 text-orange-400 border border-orange-500/20' : 'bg-blue-600/10 text-blue-400 border border-blue-500/20'
-                            }`}>
+                            <span
+                              className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase ${
+                                p.category === 'marmita'
+                                  ? 'bg-orange-600/10 text-orange-400 border border-orange-500/20'
+                                  : 'bg-blue-600/10 text-blue-400 border border-blue-500/20'
+                              }`}
+                            >
                               {p.category}
                             </span>
-                            <span className={`text-[10px] font-mono font-bold uppercase ${
-                              p.status === 'disponible' ? 'text-green-400' : 'text-yellow-400'
-                            }`}>
+                            <span className={`text-[10px] font-mono font-bold uppercase ${p.status === 'disponible' ? 'text-green-400' : 'text-yellow-400'}`}>
                               ● {p.status.replace('_', ' ')}
                             </span>
                           </div>
-                          
+
                           <h4 className="text-sm font-bold text-slate-100 mt-2 line-clamp-1">{p.name}</h4>
                           <p className="text-slate-400 text-xs mt-1 line-clamp-3 leading-relaxed">{p.description}</p>
-                          
-                          {/* List of Specs count */}
+
                           <div className="mt-3 flex gap-2 text-[10px] font-mono text-slate-500">
                             <span>{p.specifications.length} Atributos</span>
                             <span>•</span>
@@ -350,33 +396,54 @@ export default function AdminPanel({
                           </div>
                         </div>
 
-                        {/* Edit and Delete Buttons */}
-                        <div className="mt-4 pt-3 border-t border-slate-800/80 flex gap-2 justify-end">
-                          <button
-                            onClick={() => openEditForm(p)}
-                            className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-xs font-mono flex items-center gap-1 transition-colors"
-                          >
-                            <Edit3 size={12} /> Editar
-                          </button>
-                          <button
-                            onClick={() => {
-                              if (confirm(`¿Está seguro de eliminar ${p.name}?`)) {
-                                onDeleteProduct(p.id);
-                              }
-                            }}
-                            className="px-2.5 py-1 bg-red-950/60 border border-red-900/30 text-red-400 hover:bg-red-900 hover:text-white rounded text-xs font-mono flex items-center gap-1 transition-all"
-                          >
-                            <Trash2 size={12} /> Eliminar
-                          </button>
+                        <div className="mt-4 pt-3 border-t border-slate-800/80 flex gap-2 justify-end items-center flex-wrap">
+                          {confirmDeleteProdId === p.id ? (
+                            <div className="flex items-center gap-1.5 text-xs font-mono">
+                              <span className="text-red-300">¿Eliminar?</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  onDeleteProduct(p.id);
+                                  setConfirmDeleteProdId(null);
+                                  showNotice(`Equipo "${p.name}" eliminado.`);
+                                }}
+                                className="px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded"
+                              >
+                                Sí
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmDeleteProdId(null)}
+                                className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded"
+                              >
+                                No
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => openEditForm(p)}
+                                className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-xs font-mono flex items-center gap-1 transition-colors"
+                              >
+                                <Edit3 size={12} /> Editar
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmDeleteProdId(p.id)}
+                                className="px-2.5 py-1 bg-red-950/60 border border-red-900/30 text-red-400 hover:bg-red-900 hover:text-white rounded text-xs font-mono flex items-center gap-1 transition-all"
+                              >
+                                <Trash2 size={12} /> Eliminar
+                              </button>
+                            </>
+                          )}
                         </div>
                       </div>
                     ))}
                   </div>
-
                 </div>
               )}
 
-              {/* TAB 2: CLIENT CONTACT REQUESTS */}
               {activeTab === 'mensajes' && (
                 <div className="space-y-4">
                   <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 mb-6">
@@ -413,9 +480,11 @@ export default function AdminPanel({
                             </div>
                             <div className="flex items-center gap-2 font-mono text-[10px]">
                               <span className="text-slate-500">{new Date(m.createdAt).toLocaleDateString()}</span>
-                              <span className={`px-2 py-0.5 rounded font-bold uppercase ${
-                                m.status === 'nuevo' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-slate-800 text-slate-500'
-                              }`}>
+                              <span
+                                className={`px-2 py-0.5 rounded font-bold uppercase ${
+                                  m.status === 'nuevo' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-slate-800 text-slate-500'
+                                }`}
+                              >
                                 {m.status}
                               </span>
                             </div>
@@ -432,43 +501,62 @@ export default function AdminPanel({
                             {m.message}
                           </p>
 
-                          <div className="mt-4 flex gap-2 justify-end">
+                          <div className="mt-4 flex gap-2 justify-end items-center flex-wrap">
                             <button
+                              type="button"
                               onClick={() => toggleMessageStatus(m.id)}
                               className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-xs font-mono flex items-center gap-1 transition-colors"
                             >
                               <CheckCircle size={12} /> Marcar como {m.status === 'nuevo' ? 'Leído' : 'Nuevo'}
                             </button>
-                            <button
-                              onClick={() => deleteMessage(m.id)}
-                              className="px-2.5 py-1 bg-red-950/60 border border-red-900/30 text-red-400 hover:bg-red-900 hover:text-white rounded text-xs font-mono flex items-center gap-1 transition-all"
-                            >
-                              <Trash2 size={12} /> Eliminar
-                            </button>
+                            {confirmDeleteMsgId === m.id ? (
+                              <div className="flex items-center gap-1.5 text-xs font-mono">
+                                <span className="text-red-300">¿Eliminar?</span>
+                                <button
+                                  type="button"
+                                  onClick={() => deleteMessage(m.id)}
+                                  className="px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded"
+                                >
+                                  Sí
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setConfirmDeleteMsgId(null)}
+                                  className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded"
+                                >
+                                  No
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setConfirmDeleteMsgId(m.id)}
+                                className="px-2.5 py-1 bg-red-950/60 border border-red-900/30 text-red-400 hover:bg-red-900 hover:text-white rounded text-xs font-mono flex items-center gap-1 transition-all"
+                              >
+                                <Trash2 size={12} /> Eliminar
+                              </button>
+                            )}
                           </div>
                         </div>
                       ))}
                     </div>
                   )}
-
                 </div>
               )}
-
             </div>
-
           </div>
         )}
 
-        {/* 3. FLOATING ADD/EDIT FORM MODAL */}
+        {/* FLOATING ADD/EDIT FORM MODAL */}
         {isFormOpen && (
           <div className="fixed inset-0 bg-slate-950/90 z-[60] flex items-center justify-center p-4 overflow-y-auto">
             <div className="bg-slate-900 border border-slate-700 rounded-xl w-full max-w-3xl shadow-2xl p-6 overflow-hidden max-h-[85vh] flex flex-col">
-              
               <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
                 <h3 className="text-base font-bold text-slate-100 font-mono">
                   {editingProduct ? 'Editar Producto del Catálogo' : 'Añadir Nuevo Producto al Catálogo'}
                 </h3>
                 <button
+                  type="button"
                   onClick={() => setIsFormOpen(false)}
                   className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white"
                 >
@@ -477,7 +565,6 @@ export default function AdminPanel({
               </div>
 
               <form onSubmit={handleSaveProduct} className="flex-1 overflow-y-auto space-y-4 pr-1 text-xs">
-                
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block font-mono font-bold text-slate-400 uppercase mb-1">Nombre del Producto *</label>
@@ -593,13 +680,10 @@ export default function AdminPanel({
                     Guardar Producto
                   </button>
                 </div>
-
               </form>
-
             </div>
           </div>
         )}
-
       </div>
     </div>
   );

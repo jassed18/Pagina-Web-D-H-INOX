@@ -1,6 +1,7 @@
+AddDefaultCharset UTF-8
+
 <IfModule mod_rewrite.c>
   RewriteEngine On
-  RewriteBase /
   RewriteRule ^index\.html$ - [L]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
@@ -19,9 +20,9 @@
   ExpiresByType application/javascript "access plus 1 month"
 </IfModule>
 
-# Ensure proper MIME types
+# Ensure proper MIME types across all browsers (Chrome, Safari, Firefox)
 <IfModule mod_mime.c>
-  AddType application/javascript .js
+  AddType application/javascript .js .mjs
   AddType text/css .css
   AddType image/svg+xml .svg
 </IfModule>

@@ -349,7 +349,7 @@ export default function App() {
 
               <div className="space-y-4 my-6">
                 <a
-                  href="https://instagram.com"
+                  href="https://www.instagram.com/dyhinoxsas?bqrl=MXB6dmtpMmF2NTA3OA=="
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-4 p-4 bg-gradient-to-r from-pink-50 to-white border border-pink-100 hover:border-pink-300 rounded-xl transition-all group"
@@ -359,12 +359,12 @@ export default function App() {
                   </div>
                   <div>
                     <span className="text-[10px] font-mono text-pink-600 font-bold uppercase tracking-wider">Instagram</span>
-                    <div className="text-slate-800 font-bold text-sm mt-0.5">@dhsteelsas</div>
+                    <div className="text-slate-800 font-bold text-sm mt-0.5">@dyhinoxsas</div>
                   </div>
                 </a>
 
                 <a
-                  href="https://facebook.com"
+                  href="https://www.facebook.com/share/1DoK6HaqWp/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-50 to-white border border-blue-100 hover:border-blue-300 rounded-xl transition-all group"
@@ -374,7 +374,7 @@ export default function App() {
                   </div>
                   <div>
                     <span className="text-[10px] font-mono text-blue-600 font-bold uppercase tracking-wider">Facebook</span>
-                    <div className="text-slate-800 font-bold text-sm mt-0.5">D&amp;H Steel SAS</div>
+                    <div className="text-slate-800 font-bold text-sm mt-0.5">DYH INOX SAs</div>
                   </div>
                 </a>
               </div>

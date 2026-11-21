@@ -87,7 +87,7 @@ export default function AdminPanel({
       setIsLoggedIn(true);
       setAuthError('');
     } else {
-      setAuthError('Credenciales incorrectas. Intente con usuario: admin, clave: admin123');
+      setAuthError('Usuario o contraseña incorrectos. Intente nuevamente.');
     }
   };
 
@@ -233,7 +233,7 @@ export default function AdminPanel({
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="admin"
+                  placeholder="Ingrese usuario"
                   className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
@@ -245,7 +245,7 @@ export default function AdminPanel({
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="admin123"
+                  placeholder="Ingrese contraseña"
                   className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
@@ -262,12 +262,6 @@ export default function AdminPanel({
               >
                 <LogIn size={14} /> Acceder al Panel
               </button>
-
-              <div className="text-center pt-2">
-                <span className="text-[10px] text-slate-500 font-mono">
-                  * Pruebe con: admin / admin123
-                </span>
-              </div>
             </form>
           </div>
         ) : (

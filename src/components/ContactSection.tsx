@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Phone, Mail, MapPin, Send, MessageCircle, CheckCircle } from 'lucide-react';
+import { Phone, Mail, MapPin, Send, MessageCircle, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { ContactMessage, Product } from '../types';
 import { safeParseJSON, safeStorage } from '../utils/browser';
+
+const TARGET_EMAIL = 'dyhinoxsas@hotmail.com';
 
 interface ContactSectionProps {
   products: Product[];
@@ -17,7 +19,10 @@ export default function ContactSection({ products, preselectedProduct }: Contact
     productInterest: '',
     message: '',
   });
+  const [isSending, setIsSending] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [fallbackMailtoUrl, setFallbackMailtoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (preselectedProduct?.name) {
@@ -28,10 +33,41 @@ export default function ContactSection({ products, preselectedProduct }: Contact
     }
   }, [preselectedProduct]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name || !formData.email || !formData.message) return;
+  const buildMailtoLink = (data: typeof formData) => {
+    const subject = `Solicitud de Cotización D&H INOX SAS - ${data.name}`;
+    const body = [
+      `Nombre / Empresa: ${data.name}`,
+      `Correo: ${data.email}`,
+      `Teléfono: ${data.phone || 'No especificado'}`,
+      `Equipo de Interés: ${data.productInterest || 'No especificado'}`,
+      '',
+      'Mensaje / Requerimientos Técnicos:',
+      data.message,
+    ].join('\n');
 
+    return `mailto:${TARGET_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSending) return;
+
+    const trimmedName = formData.name.trim();
+    const trimmedEmail = formData.email.trim();
+    const trimmedPhone = formData.phone.trim();
+    const trimmedMessage = formData.message.trim();
+
+    if (!trimmedName || !trimmedEmail || !trimmedMessage) {
+      setSubmitError('Por favor complete todos los campos obligatorios (*).');
+      return;
+    }
+
+    setIsSending(true);
+    setSubmitError(null);
+    setIsSubmitted(false);
+    setFallbackMailtoUrl(null);
+
+    // 1. Save message locally so Admin Panel can also review it
     const existingMessages = safeParseJSON<ContactMessage[]>(
       safeStorage.getItem('dh_contact_messages'),
       []
@@ -39,7 +75,11 @@ export default function ContactSection({ products, preselectedProduct }: Contact
 
     const newMessage: ContactMessage = {
       id: 'msg-' + Date.now(),
-      ...formData,
+      name: trimmedName,
+      email: trimmedEmail,
+      phone: trimmedPhone,
+      productInterest: formData.productInterest,
+      message: trimmedMessage,
       createdAt: new Date().toISOString(),
       status: 'nuevo',
     };
@@ -48,19 +88,93 @@ export default function ContactSection({ products, preselectedProduct }: Contact
     try {
       window.dispatchEvent(new Event('dh_messages_updated'));
     } catch {
-      // Ignore event dispatch failure on legacy environments
+      // Ignore event dispatch errors in legacy browsers
     }
 
-    setIsSubmitted(true);
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      productInterest: '',
-      message: '',
-    });
+    let emailDelivered = false;
 
-    setTimeout(() => setIsSubmitted(false), 5000);
+    // 2. Try PHP handler (when hosted on Apache/Hostinger public_html with PHP)
+    try {
+      const phpPayload = new FormData();
+      phpPayload.append('name', trimmedName);
+      phpPayload.append('email', trimmedEmail);
+      phpPayload.append('phone', trimmedPhone);
+      phpPayload.append('productInterest', formData.productInterest);
+      phpPayload.append('message', trimmedMessage);
+
+      const phpRes = await fetch('./enviar.php', {
+        method: 'POST',
+        body: phpPayload,
+      });
+
+      const contentType = phpRes.headers.get('content-type') || '';
+      if (phpRes.ok && contentType.includes('application/json')) {
+        const phpData = await phpRes.json();
+        if (phpData && phpData.success === true && phpData.mailSent === true) {
+          emailDelivered = true;
+        }
+      }
+    } catch {
+      // Static hosting without PHP; continue to FormSubmit
+    }
+
+    // 3. If PHP mailer did not send the email (e.g. static Vite hosting / AI Studio), send via FormSubmit
+    if (!emailDelivered) {
+      try {
+        const fsRes = await fetch(`https://formsubmit.co/ajax/${TARGET_EMAIL}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          body: JSON.stringify({
+            Nombre_o_Empresa: trimmedName,
+            Correo_Cliente: trimmedEmail,
+            Telefono: trimmedPhone || 'No especificado',
+            Equipo_de_Interes: formData.productInterest || 'No especificado',
+            Mensaje: trimmedMessage,
+            _subject: `Nueva Solicitud de Cotización - D&H INOX SAS (${trimmedName})`,
+            _replyto: trimmedEmail,
+            _template: 'table',
+            _captcha: 'false',
+          }),
+        });
+
+        if (fsRes.ok) {
+          const fsData = await fsRes.json();
+          if (fsData && (fsData.success === true || fsData.success === 'true')) {
+            emailDelivered = true;
+          }
+        }
+      } catch {
+        // Network or third-party block; handled below with direct mailto fallback
+      }
+    }
+
+    setIsSending(false);
+
+    if (emailDelivered) {
+      setIsSubmitted(true);
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        productInterest: '',
+        message: '',
+      });
+      setTimeout(() => setIsSubmitted(false), 7000);
+    } else {
+      setFallbackMailtoUrl(buildMailtoLink({
+        name: trimmedName,
+        email: trimmedEmail,
+        phone: trimmedPhone,
+        productInterest: formData.productInterest,
+        message: trimmedMessage,
+      }));
+      setSubmitError(
+        `No se pudo completar el envío automático en este navegador o red. Use el botón "Enviar por Correo Directo" para enviarlo directamente a ${TARGET_EMAIL}.`
+      );
+    }
   };
 
   return (
@@ -116,7 +230,7 @@ export default function ContactSection({ products, preselectedProduct }: Contact
 
               {/* Correo Electrónico card */}
               <a
-                href="mailto:dyhinoxsas@hotmail.com"
+                href={`mailto:${TARGET_EMAIL}`}
                 className="group flex items-center gap-4 bg-red-50/70 border border-red-100 hover:border-red-300 rounded-2xl p-4 transition-all duration-300 shadow-sm"
               >
                 <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform shrink-0">
@@ -124,7 +238,7 @@ export default function ContactSection({ products, preselectedProduct }: Contact
                 </div>
                 <div>
                   <div className="text-[10px] font-mono text-red-700 uppercase tracking-widest font-bold">Correo Corporativo</div>
-                  <div className="text-slate-900 font-bold text-sm mt-0.5 break-all group-hover:text-red-600 transition-colors">dyhinoxsas@hotmail.com</div>
+                  <div className="text-slate-900 font-bold text-sm mt-0.5 break-all group-hover:text-red-600 transition-colors">{TARGET_EMAIL}</div>
                   <div className="text-slate-600 text-xs">Envíenos sus planos o requerimientos técnicos</div>
                 </div>
               </a>
@@ -152,7 +266,7 @@ export default function ContactSection({ products, preselectedProduct }: Contact
             <div className="mb-6">
               <h3 className="text-lg font-bold text-slate-900">Formulario de Solicitud de Cotización</h3>
               <p className="text-slate-600 text-xs mt-1">
-                Diligencie este formulario para recibir una propuesta formal y personalizada.
+                Diligencie este formulario para enviar su requerimiento directamente a <span className="font-mono font-semibold text-slate-800">{TARGET_EMAIL}</span>.
               </p>
             </div>
 
@@ -166,11 +280,34 @@ export default function ContactSection({ products, preselectedProduct }: Contact
                 >
                   <CheckCircle size={18} className="text-emerald-600 shrink-0" />
                   <div>
-                    <strong className="font-bold">¡Mensaje Enviado con éxito!</strong>
+                    <strong className="font-bold">¡Requerimiento enviado con éxito a {TARGET_EMAIL}!</strong>
                     <p className="text-[11px] text-emerald-700 mt-0.5">
-                      Su requerimiento ha sido registrado. Un asesor técnico se comunicará con usted en menos de 24 horas hábiles.
+                      Su solicitud fue enviada por correo electrónico. Un asesor técnico se comunicará con usted en menos de 24 horas hábiles.
                     </p>
                   </div>
+                </motion.div>
+              )}
+
+              {submitError && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="mb-6 p-4 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs space-y-2.5"
+                >
+                  <div className="flex items-start gap-2.5">
+                    <AlertCircle size={18} className="text-amber-600 shrink-0 mt-0.5" />
+                    <p>{submitError}</p>
+                  </div>
+                  {fallbackMailtoUrl && (
+                    <a
+                      href={fallbackMailtoUrl}
+                      className="inline-flex items-center gap-2 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-mono font-bold uppercase text-[11px] transition-colors"
+                    >
+                      <Mail size={14} />
+                      Enviar por Correo Directo ({TARGET_EMAIL})
+                    </a>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -254,10 +391,22 @@ export default function ContactSection({ products, preselectedProduct }: Contact
 
               <button
                 type="submit"
-                className="w-full bg-slate-950 hover:bg-slate-800 text-white font-mono uppercase tracking-wider text-xs font-bold py-3 px-4 rounded-xl shadow-md transition-all duration-300 flex items-center justify-center gap-2 mt-4 cursor-pointer"
+                disabled={isSending}
+                className={`w-full bg-slate-950 hover:bg-slate-800 text-white font-mono uppercase tracking-wider text-xs font-bold py-3 px-4 rounded-xl shadow-md transition-all duration-300 flex items-center justify-center gap-2 mt-4 ${
+                  isSending ? 'opacity-70 cursor-wait' : 'cursor-pointer'
+                }`}
               >
-                <Send size={14} />
-                Enviar Requerimiento
+                {isSending ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    Enviando a {TARGET_EMAIL}...
+                  </>
+                ) : (
+                  <>
+                    <Send size={14} />
+                    Enviar Requerimiento
+                  </>
+                )}
               </button>
             </form>
           </div>
